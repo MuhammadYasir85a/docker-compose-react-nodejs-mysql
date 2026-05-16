@@ -1,0 +1,96 @@
+# Trigger on changes to backend folder on master/develop branches
+trigger:
+  branches:
+    include:
+      - master
+      - develop
+  paths:
+    include:
+      - bezkoder-api/**
+      - azure-pipelines/backend-pipeline.yml
+
+# Variables from our variable group
+variables:
+  - group: teksel-variables
+  - name: imageTag
+    value: $(Build.BuildId)
+
+# Pool of agents that will run this pipeline
+pool:
+  vmImage: 'ubuntu-latest'
+
+# ============================================================
+# STAGES
+# ============================================================
+stages:
+
+  # ── STAGE 1: BUILD & PUSH ─────────────────────────────────
+  - stage: Build
+    displayName: '🏗️ Build & Push Docker Image'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build Backend'
+        steps:
+          
+          # Step 1: Checkout source code
+          - checkout: self
+            displayName: '📥 Checkout Code'
+          
+          # Step 2: Show what we're building
+          - script: |
+              echo "Build ID: $(Build.BuildId)"
+              echo "Branch: $(Build.SourceBranch)"
+              echo "Registry: $(DOCKER_REGISTRY)"
+              echo "Image: $(BACKEND_IMAGE_NAME):$(imageTag)"
+            displayName: '📋 Display Build Info'
+          
+          # Step 3: Build Docker image
+          - task: Docker@2
+            displayName: '🔨 Build Backend Image'
+            inputs:
+              command: build
+              containerRegistry: $(ACR_SERVICE_CONNECTION)
+              repository: $(BACKEND_IMAGE_NAME)
+              dockerfile: bezkoder-api/Dockerfile
+              buildContext: bezkoder-api/
+              tags: |
+                $(imageTag)
+                latest
+          
+          # Step 4: Push to ACR
+          - task: Docker@2
+            displayName: '📤 Push to ACR'
+            inputs:
+              command: push
+              containerRegistry: $(ACR_SERVICE_CONNECTION)
+              repository: $(BACKEND_IMAGE_NAME)
+              tags: |
+                $(imageTag)
+                latest
+
+  # ── STAGE 2: DEPLOY TO DEV ────────────────────────────────
+  - stage: DeployDev
+    displayName: '🚀 Deploy to Development'
+    dependsOn: Build
+    condition: |
+      and(
+        succeeded(),
+        or(
+          eq(variables['Build.SourceBranch'], 'refs/heads/develop'),
+          eq(variables['Build.SourceBranch'], 'refs/heads/master')
+        )
+      )
+    jobs:
+      - deployment: DeployDevJob
+        displayName: 'Deploy to Dev App Service'
+        environment: 'development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebAppContainer@1
+                  displayName: '🚀 Deploy Container to App Service'
+                  inputs:
+                    azureSubscription: $(AZURE_SUBSCRIPTION)
+                    appName: $(BACKEND_APP_NAME)
+                    containers: $(DOCKER_REGISTRY)/$(BACKEND_IMAGE_NAME):$(imageTag)
