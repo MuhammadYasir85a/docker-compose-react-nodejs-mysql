@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - master
+      - develop
+  paths:
+    include:
+      - bezkoder-ui/**
+      - azure-pipelines/frontend-pipeline.yml
+
+variables:
+  - group: teksel-variables
+  - name: backendUrl
+    value: 'https://app-teksel-backend-dev-sea-01.azurewebsites.net/api'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+  # ── STAGE 1: BUILD REACT APP ──────────────────────────────
+  - stage: Build
+    displayName: '🏗️ Build React Application'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build Frontend'
+        steps:
+
+          - checkout: self
+            displayName: '📥 Checkout Code'
+
+          - task: NodeTool@0
+            displayName: '📦 Install Node.js 18'
+            inputs:
+              versionSpec: '18.x'
+
+          - script: |
+              echo "Build ID: $(Build.BuildId)"
+              echo "Branch: $(Build.SourceBranch)"
+              echo "Backend URL: $(backendUrl)"
+              node --version
+              npm --version
+            displayName: '📋 Display Build Info'
+
+          - script: |
+              cd bezkoder-ui
+              npm ci
+            displayName: '📦 Install npm Dependencies'
+
+          - script: |
+              cd bezkoder-ui
+              export REACT_APP_API_BASE_URL=$(backendUrl)
+              export NODE_OPTIONS=--openssl-legacy-provider
+              npm run build
+            displayName: '🔨 Build React App'
+            env:
+              REACT_APP_API_BASE_URL: $(backendUrl)
+              NODE_OPTIONS: '--openssl-legacy-provider'
+
+          - publish: bezkoder-ui/build
+            artifact: react-build
+            displayName: '📤 Publish Build Artifact'
+
+  # ── STAGE 2: DEPLOY TO STATIC WEB APP ────────────────────
+  - stage: Deploy
+    displayName: '🚀 Deploy to Static Web App'
+    dependsOn: Build
+    condition: |
+      and(
+        succeeded(),
+        or(
+          eq(variables['Build.SourceBranch'], 'refs/heads/develop'),
+          eq(variables['Build.SourceBranch'], 'refs/heads/master')
+        )
+      )
+    jobs:
+      - deployment: DeployJob
+        displayName: 'Deploy Frontend'
+        environment: 'development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+
+                - download: current
+                  artifact: react-build
+                  displayName: '📥 Download Build Artifact'
+
+                - task: AzureStaticWebApp@0
+                  displayName: '🚀 Deploy to Azure Static Web App'
+                  inputs:
+                    workingDirectory: $(Pipeline.Workspace)/react-build
+                    app_location: '/'
+                    skip_app_build: true
+                    skip_api_build: true
+                    is_static_export: true
+                    azure_static_web_apps_api_token: $(STATIC_WEB_APP_TOKEN)
