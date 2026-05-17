@@ -73,6 +73,8 @@ stages:
           eq(variables['Build.SourceBranch'], 'refs/heads/master')
         )
       )
+    variables:                         
+      - group: teksel-variables 
     jobs:
       - deployment: DeployJob
         displayName: 'Deploy Frontend'
