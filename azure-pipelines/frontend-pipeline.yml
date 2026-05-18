@@ -11,7 +11,7 @@ trigger:
 variables:
   - group: teksel-variables
   - name: backendUrl
-    value: 'https://app-teksel-backend-dev-sea-01.azurewebsites.net/api'
+    value: 'https://app-teksel-backend-dev-sea-01-dahjcgfkewdagwhp.southeastasia-01.azurewebsites.net/api'
 
 pool:
   vmImage: 'ubuntu-latest'
