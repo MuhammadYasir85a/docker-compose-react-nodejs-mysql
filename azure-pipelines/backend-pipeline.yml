@@ -94,3 +94,31 @@ stages:
                     azureSubscription: $(AZURE_SUBSCRIPTION)
                     appName: $(BACKEND_APP_NAME)
                     containers: $(DOCKER_REGISTRY)/$(BACKEND_IMAGE_NAME):$(imageTag)
+
+
+
+  # ── STAGE 3: DEPLOY TO PRODUCTION (with approval) ────────
+  - stage: DeployProd
+    displayName: '🏭 Deploy to Production'
+    dependsOn: DeployDev
+    condition: |
+      and(
+        succeeded(),
+        eq(variables['Build.SourceBranch'], 'refs/heads/master')
+      )
+    variables:
+      - group: teksel-variables
+    jobs:
+      - deployment: DeployProdJob
+        displayName: 'Deploy Backend to Production'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebAppContainer@1
+                  displayName: '🚀 Deploy Container to Production App Service'
+                  inputs:
+                    azureSubscription: $(AZURE_SUBSCRIPTION)
+                    appName: $(BACKEND_APP_NAME)
+                    containers: $(DOCKER_REGISTRY)/$(BACKEND_IMAGE_NAME):$(imageTag)
