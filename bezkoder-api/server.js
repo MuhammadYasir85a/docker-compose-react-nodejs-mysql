@@ -10,33 +10,32 @@ var corsOptions = {
 
 app.use(cors(corsOptions));
 
-// parse requests of content-type - application/json
 app.use(express.json());
 
-// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
 const db = require("./app/models");
 
-// CHANGED: Don't crash if DB connection fails
 db.sequelize.sync()
   .then(() => {
-    console.log("✅ Database connected and synced.");
+    console.log("Database synced successfully. Tables ready.");
   })
   .catch((err) => {
-    console.warn("⚠️ Database connection failed - app continues without DB");
-    console.warn("Error:", err.message);
+    console.error("Failed to sync database:", err.message);
+    console.error("Full error:", err);
   });
 
-// simple route
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to bezkoder application." });
 });
 
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 require("./app/routes/turorial.routes")(app);
 
-// set port, listen for requests
-const PORT = process.env.NODE_DOCKER_PORT || 8080;
+const PORT = process.env.NODE_DOCKER_PORT || process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
+  console.log("Server is running on port " + PORT);
 });
