@@ -18,11 +18,15 @@ app.use(express.urlencoded({ extended: true }));
 
 const db = require("./app/models");
 
-db.sequelize.sync();
-// // drop the table if it already exists
-// db.sequelize.sync({ force: true }).then(() => {
-//   console.log("Drop and re-sync db.");
-// });
+// CHANGED: Don't crash if DB connection fails
+db.sequelize.sync()
+  .then(() => {
+    console.log("✅ Database connected and synced.");
+  })
+  .catch((err) => {
+    console.warn("⚠️ Database connection failed - app continues without DB");
+    console.warn("Error:", err.message);
+  });
 
 // simple route
 app.get("/", (req, res) => {

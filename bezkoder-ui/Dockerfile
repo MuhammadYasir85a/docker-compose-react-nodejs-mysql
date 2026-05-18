@@ -1,20 +1,41 @@
-# Stage 1
-FROM node:14 as build-stage
+# ============================================
+# FRONTEND DOCKERFILE — Enterprise Multi-Stage
+# Project: TEKSEL Azure CI/CD Lab
+# ============================================
 
-WORKDIR /bezkoder-ui
-COPY package.json .
-RUN npm install
+# ── Stage 1: Build React App ──────────────────
+FROM node:18-alpine AS build
+
+WORKDIR /app
+
+# Fix for old React + new Node OpenSSL conflict
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
+# Copy package files first (cache optimization)
+COPY package*.json ./
+
+# Install ALL dependencies (including dev - needed to build)
+RUN npm ci
+
+# Copy source code
 COPY . .
 
+# Accept backend URL as build argument
 ARG REACT_APP_API_BASE_URL
 ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 
+# Build React app into static files
 RUN npm run build
 
-# Stage 2
-FROM nginx:1.17.0-alpine
+# ── Stage 2: Serve with Nginx ─────────────────
+FROM nginx:alpine
 
-COPY --from=build-stage /bezkoder-ui/build /usr/share/nginx/html
-EXPOSE $REACT_DOCKER_PORT
+# Copy built static files to nginx serving directory
+COPY --from=build /app/build /usr/share/nginx/html
 
-CMD nginx -g 'daemon off;'
+# Copy our custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
