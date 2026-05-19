@@ -6,11 +6,13 @@ module.exports = (sequelize, Sequelize) => {
     },
     description: {
       type: Sequelize.STRING(1000),
-      allowNull: true
+      allowNull: true,
+      defaultValue: ""
     },
     published: {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false
+      type: Sequelize.TINYINT,
+      allowNull: false,
+      defaultValue: 0
     }
   });
 

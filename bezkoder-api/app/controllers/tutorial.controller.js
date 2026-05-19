@@ -5,7 +5,7 @@ const Op = db.Sequelize.Op;
 // Create and Save a new Tutorial
 exports.create = (req, res) => {
   console.log("REQ BODY RECEIVED:", req.body);
-  // Validate request
+
   if (!req.body.title) {
     res.status(400).send({
       message: "Content can not be empty!"
@@ -13,14 +13,15 @@ exports.create = (req, res) => {
     return;
   }
 
-  // Create a Tutorial — ensure all values are correct types for SQL Server
+  // CRITICAL: Convert boolean to number for SQL Server tedious driver
   const tutorial = {
     title: String(req.body.title),
     description: String(req.body.description || ""),
-    published: req.body.published === true || req.body.published === "true"
+    published: (req.body.published === true || req.body.published === "true" || req.body.published === 1) ? 1 : 0
   };
 
-  // Save Tutorial in the database
+  console.log("TUTORIAL OBJECT:", tutorial);
+
   Tutorial.create(tutorial)
     .then(data => {
       res.send(data);
@@ -28,8 +29,7 @@ exports.create = (req, res) => {
     .catch(err => {
       console.error("Create tutorial error:", err);
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the Tutorial."
+        message: err.message || "Some error occurred while creating the Tutorial."
       });
     });
 };
@@ -46,8 +46,7 @@ exports.findAll = (req, res) => {
     .catch(err => {
       console.error("Find all error:", err);
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while retrieving tutorials."
+        message: err.message || "Some error occurred while retrieving tutorials."
       });
     });
 };
@@ -78,12 +77,11 @@ exports.findOne = (req, res) => {
 exports.update = (req, res) => {
   const id = req.params.id;
 
-  // Sanitize input for SQL Server
   const tutorial = {};
   if (req.body.title !== undefined) tutorial.title = String(req.body.title);
   if (req.body.description !== undefined) tutorial.description = String(req.body.description || "");
   if (req.body.published !== undefined) {
-    tutorial.published = req.body.published === true || req.body.published === "true";
+    tutorial.published = (req.body.published === true || req.body.published === "true" || req.body.published === 1) ? 1 : 0;
   }
 
   Tutorial.update(tutorial, {
@@ -91,13 +89,9 @@ exports.update = (req, res) => {
   })
     .then(num => {
       if (num == 1) {
-        res.send({
-          message: "Tutorial was updated successfully."
-        });
+        res.send({ message: "Tutorial was updated successfully." });
       } else {
-        res.send({
-          message: `Cannot update Tutorial with id=${id}. Maybe Tutorial was not found or req.body is empty!`
-        });
+        res.send({ message: `Cannot update Tutorial with id=${id}.` });
       }
     })
     .catch(err => {
@@ -117,13 +111,9 @@ exports.delete = (req, res) => {
   })
     .then(num => {
       if (num == 1) {
-        res.send({
-          message: "Tutorial was deleted successfully!"
-        });
+        res.send({ message: "Tutorial was deleted successfully!" });
       } else {
-        res.send({
-          message: `Cannot delete Tutorial with id=${id}. Maybe Tutorial was not found!`
-        });
+        res.send({ message: `Cannot delete Tutorial with id=${id}.` });
       }
     })
     .catch(err => {
@@ -146,23 +136,21 @@ exports.deleteAll = (req, res) => {
     .catch(err => {
       console.error("Delete all error:", err);
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while removing all tutorials."
+        message: err.message || "Some error occurred while removing all tutorials."
       });
     });
 };
 
 // find all published Tutorial
 exports.findAllPublished = (req, res) => {
-  Tutorial.findAll({ where: { published: true } })
+  Tutorial.findAll({ where: { published: 1 } })
     .then(data => {
       res.send(data);
     })
     .catch(err => {
       console.error("Find published error:", err);
       res.status(500).send({
-        message:
-          err.message || "Some error occurred while retrieving tutorials."
+        message: err.message || "Some error occurred while retrieving tutorials."
       });
     });
 };
