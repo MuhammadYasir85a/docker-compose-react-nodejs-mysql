@@ -12,11 +12,11 @@ exports.create = (req, res) => {
     return;
   }
 
-  // Create a Tutorial
+  // Create a Tutorial — ensure all values are correct types for SQL Server
   const tutorial = {
-    title: req.body.title,
-    description: req.body.description,
-    published: req.body.published ? req.body.published : false
+    title: String(req.body.title),
+    description: String(req.body.description || ""),
+    published: req.body.published === true || req.body.published === "true"
   };
 
   // Save Tutorial in the database
@@ -25,6 +25,7 @@ exports.create = (req, res) => {
       res.send(data);
     })
     .catch(err => {
+      console.error("Create tutorial error:", err);
       res.status(500).send({
         message:
           err.message || "Some error occurred while creating the Tutorial."
@@ -42,6 +43,7 @@ exports.findAll = (req, res) => {
       res.send(data);
     })
     .catch(err => {
+      console.error("Find all error:", err);
       res.status(500).send({
         message:
           err.message || "Some error occurred while retrieving tutorials."
@@ -55,9 +57,16 @@ exports.findOne = (req, res) => {
 
   Tutorial.findByPk(id)
     .then(data => {
-      res.send(data);
+      if (data) {
+        res.send(data);
+      } else {
+        res.status(404).send({
+          message: `Cannot find Tutorial with id=${id}.`
+        });
+      }
     })
     .catch(err => {
+      console.error("Find one error:", err);
       res.status(500).send({
         message: "Error retrieving Tutorial with id=" + id
       });
@@ -68,7 +77,15 @@ exports.findOne = (req, res) => {
 exports.update = (req, res) => {
   const id = req.params.id;
 
-  Tutorial.update(req.body, {
+  // Sanitize input for SQL Server
+  const tutorial = {};
+  if (req.body.title !== undefined) tutorial.title = String(req.body.title);
+  if (req.body.description !== undefined) tutorial.description = String(req.body.description || "");
+  if (req.body.published !== undefined) {
+    tutorial.published = req.body.published === true || req.body.published === "true";
+  }
+
+  Tutorial.update(tutorial, {
     where: { id: id }
   })
     .then(num => {
@@ -83,6 +100,7 @@ exports.update = (req, res) => {
       }
     })
     .catch(err => {
+      console.error("Update error:", err);
       res.status(500).send({
         message: "Error updating Tutorial with id=" + id
       });
@@ -108,6 +126,7 @@ exports.delete = (req, res) => {
       }
     })
     .catch(err => {
+      console.error("Delete error:", err);
       res.status(500).send({
         message: "Could not delete Tutorial with id=" + id
       });
@@ -124,6 +143,7 @@ exports.deleteAll = (req, res) => {
       res.send({ message: `${nums} Tutorials were deleted successfully!` });
     })
     .catch(err => {
+      console.error("Delete all error:", err);
       res.status(500).send({
         message:
           err.message || "Some error occurred while removing all tutorials."
@@ -138,6 +158,7 @@ exports.findAllPublished = (req, res) => {
       res.send(data);
     })
     .catch(err => {
+      console.error("Find published error:", err);
       res.status(500).send({
         message:
           err.message || "Some error occurred while retrieving tutorials."
