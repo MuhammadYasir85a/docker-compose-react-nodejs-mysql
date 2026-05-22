@@ -32,7 +32,7 @@ This project also includes a real-world debugging case study where a database dr
 
 A complete walkthrough of the project demonstrating the live deployment, CI/CD pipeline execution, real-time bug debugging, and end-to-end functionality is available in this repository.
 
-**Video File:** [Watch the Full Project Demo](./demo)
+**Video File:** [Watch the Full Project Demo](https://drive.google.com/drive/folders/1u7Fz_rocBoRbPOZHXOhAldFB1SWyESpm?usp=sharing)
 
 The video covers:
 - Live application demonstration with tutorial creation
