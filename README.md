@@ -240,7 +240,7 @@ Once approved, the pipeline deploys the same container image to the production A
 
 1. Clone the repository:
 
-```bash
+bash
 git clone https://github.com/MuhammadYasir85a/docker-compose-react-nodejs-mysql.git
 cd docker-compose-react-nodejs-mysql
 Configure environment variables by copying the sample file:

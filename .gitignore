@@ -1,0 +1,47 @@
+# ─── Environment Files (NEVER commit) ─────────────────
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.*.local
+bezkoder-api/.env
+bezkoder-ui/.env
+
+# ─── Dependencies ─────────────────────────────────────
+node_modules/
+bezkoder-api/node_modules/
+bezkoder-ui/node_modules/
+
+# ─── Build outputs ────────────────────────────────────
+build/
+dist/
+bezkoder-ui/build/
+
+# ─── Logs ─────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS Files ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE / Editor ─────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Docker ───────────────────────────────────────────
+.docker/
+
+# ─── Misc ─────────────────────────────────────────────
+*.pem
+*.key
+*.crt
+.cache/
+coverage/
