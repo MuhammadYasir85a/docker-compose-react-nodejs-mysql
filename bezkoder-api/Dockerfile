@@ -1,8 +1,3 @@
-# ============================================
-# BACKEND DOCKERFILE — Enterprise Multi-Stage
-# Project: TEKSEL Azure CI/CD Lab
-# ============================================
-
 # ── Stage 1: Builder ─────────────────────────
 FROM node:18-alpine AS builder
 
